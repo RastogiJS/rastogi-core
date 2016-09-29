@@ -50,6 +50,7 @@
   "devDependencies": {
     "ban-sensitive-files": "1.8.3",
     "license-checker": "5.1.2",
+    "nock": "8.0.0",
     "nyc": "6.6.1",
     "pre-git": "3.10.0",
     "semantic-release": "4.3.5",
