@@ -6,7 +6,7 @@ const couchURL = process.env.NPM_URL || 'https://skimdb.npmjs.com/registry'
 // for real-time stream, set param to this: include_docs=true&since=now
 const streamRawEvent$ = (param) => Rx.Observable.create((observer) => {
   param = param || ''
-  const datasource = new EventSource(`${couchURL}/_changes?feed=eventsource&`)
+  const datasource = new EventSource(`${couchURL}/_changes?feed=eventsource&${param}`)
 
   const onData = (d) => observer.next(d)
   const onError = (err) => {
@@ -42,5 +42,3 @@ const fetchDependencies = (mod) => fetch(`${couchURL}/_design/app/_view/allDepen
   .map(x => JSON.parse(x.body))
 
 module.exports = {streamJSON$, streamRawEvent$, fetchDocument, fetchDependencies, fetchDocuments}
-
-fetchDependencies('socket.io').subscribe(console.log)
