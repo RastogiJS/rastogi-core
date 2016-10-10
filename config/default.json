@@ -1,0 +1,18 @@
+{
+  "npm": {
+    "registry": "https://skimdb.npmjs.com/registry"
+  },
+  "nsp": {
+    "advisories": "https://api.nodesecurity.io/advisories",
+    "refreshInterval": 10000
+  },
+  "rethinkdb": {
+    "connect": {
+      "host": "localhost",
+      "port": "28015"
+    },
+    "db": "rastogi",
+    "tableAdv": "advisories",
+    "tableVuln": "vulndependencies"
+  }
+}

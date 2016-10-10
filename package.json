@@ -60,6 +60,7 @@
   },
   "dependencies": {
     "bee-queue": "0.3.0",
+    "config": "1.21.0",
     "eventsource": "0.2.1",
     "jsondiffpatch": "0.2.4",
     "memoizee": "0.4.1",

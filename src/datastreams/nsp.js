@@ -1,7 +1,6 @@
 const fetch = require('../utils/fetch')
 const Rx = require('rxjs/Rx')
-
-const timeout = 10000
+const config = require('config')
 
 // /
 // /  Diff such that we only get added or edited delta (e.g new or updated advisories)
@@ -37,9 +36,9 @@ const diff = source => Rx.Observable.create(observer => {
 // /
 // /  Get and poll of advisories
 // /
-const get = fetch('https://api.nodesecurity.io/advisories').filter(x => x.statusCode === 200).map(x => JSON.parse(x.body))
+const get = fetch(process.env.NSP_URL || config.get('nsp.advisories')).filter(x => x.statusCode === 200).map(x => JSON.parse(x.body))
 
-const poll = get.merge(Rx.Observable.interval(timeout).switchMapTo(get))
+const poll = get.merge(Rx.Observable.interval(config.get('nsp.refreshInterval')).switchMapTo(get))
 
 const pollWithdistinctUntilChanged = diff(poll)
 

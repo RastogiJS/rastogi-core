@@ -1,7 +1,8 @@
 const Rx = require('rxjs/Rx')
 const EventSource = require('eventsource')
 const fetch = require('../utils/fetch')
-const couchURL = process.env.NPM_URL || 'https://skimdb.npmjs.com/registry'
+const config = require('config')
+const couchURL = process.env.NPM_URL || config.get('npm.registry')
 
 // for real-time stream, set param to this: include_docs=true&since=now
 const streamRawEvent$ = (param) => Rx.Observable.create((observer) => {
