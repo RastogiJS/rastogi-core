@@ -29,7 +29,6 @@ const setupRethinkDB = (conn) => r.dbList().run(conn)
     else if (list.indexOf(config.get('rethinkdb.tableAdv')) > -1 && !(list.indexOf(config.get('rethinkdb.tableVuln')) > -1)) return r.db(config.get('rethinkdb.db')).tableCreate(config.get('rethinkdb.tableVuln')).run(conn)
     else return true
   })
-
 //
 // AMQP
 //
@@ -55,14 +54,18 @@ const consumer = (connamqp, connR) => {
         const val = JSON.parse(msg.content.toString())
         const res = {
           id: val.doc._id,
+          advisories: [],
+          'dist-tags': val.doc['dist-tags']
+        }
+        res.advisories.push({
           adv: val.adv.module_name,
           'adv-category': val.adv.category,
           'adv-range': val.adv.vulnerable_versions,
-          'dist-tags': val.doc['dist-tags'],
           versions: memanalyzeDependency(val.adv)(val.doc)
-        }
-        const checkmaxVuln = res.versions.map(ver => ver.maxVuln).reduce((prev, curr) => prev || curr, false)
-        const checkminVuln = res.versions.map(ver => ver.minVuln).reduce((prev, curr) => prev || curr, false)
+        })
+
+        const checkmaxVuln = res.advisories[0].versions.map(ver => ver.maxVuln).reduce((prev, curr) => prev || curr, false)
+        const checkminVuln = res.advisories[0].versions.map(ver => ver.minVuln).reduce((prev, curr) => prev || curr, false)
         const insertAdv = r.db(config.get('rethinkdb.db')).table(config.get('rethinkdb.tableAdv')).insert(val.adv, {conflict: 'update'}).run(connR)
         const insertVuln = r.db(config.get('rethinkdb.db')).table(config.get('rethinkdb.tableVuln')).insert(res, {conflict: 'update'}).run(connR)
         if (checkmaxVuln || checkminVuln) {
