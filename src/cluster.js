@@ -1,17 +1,15 @@
 const memoize = require('memoizee')
-const Rx = require('rxjs/Rx')
 const r = require('rethinkdb')
 const config = require('config')
-// TEST
+const Rx = require('rxjs/Rx')
+
 const amqp = require('amqplib/callback_api')
 const cluster = require('cluster')
 const numCPUs = require('os').cpus().length
 const q = 'rastogi'
-//
-// Data streams
-//
-const nsp = require('./datastreams/nsp')
-const npm = require('./datastreams/npm')
+
+const nspfeed = require('./datastreams/nspfeed')
+const changesFeed = require('./datastreams/changesfeed').changesStream
 //
 // Analyzer nsp-dependencies
 //
@@ -31,21 +29,6 @@ const setupRethinkDB = (conn) => r.dbList().run(conn)
     else if (list.indexOf(config.get('rethinkdb.tableAdv')) > -1 && !(list.indexOf(config.get('rethinkdb.tableVuln')) > -1)) return r.db(config.get('rethinkdb.db')).tableCreate(config.get('rethinkdb.tableVuln')).run(conn)
     else return true
   })
-//
-// Processing pipeline
-//
-const processNSP = nsp.get.flatMap(x => Rx.Observable.from(x.results))
-  .flatMap(adv => npm.fetchDocument(adv.module_name), (adv, doc) => {
-    if (doc && doc.versions) {
-      adv.module_versions = Object.keys(doc.versions)
-    } else {
-      adv.module_versions = []
-    }
-    adv.category = 'nsp'
-    return adv
-  })
-  .flatMap(adv => npm.fetchDependencies(adv.module_name).flatMap(res => Rx.Observable.from(res.rows)), (adv, doc) => ({adv: adv, dep: doc.id}))
-  .flatMap(res => npm.fetchDocument(res.dep), ({adv}, doc) => ({adv, doc}), 50)
 
 //
 // AMQP
@@ -54,11 +37,11 @@ const bail = (err) => {
   console.error(err)
   process.exit(1)
 }
-const publisher = (conn) => {
+const publisher = (conn, connR) => {
   const onOpen = (err, ch) => {
     if (err != null) bail(err)
     ch.assertQueue(q)
-    processNSP.subscribe(res => ch.sendToQueue(q, new Buffer(JSON.stringify(res))))
+    Rx.Observable.merge(nspfeed, changesFeed(connR)).subscribe(res => ch.sendToQueue(q, new Buffer(JSON.stringify(res))))
   }
   conn.createChannel(onOpen)
 }
@@ -110,7 +93,7 @@ r.connect(config.get('rethinkdb.connect'), (err, connR) => {
         cluster.on('exit', (worker, code, signal) => {
           console.log(`worker ${worker.process.pid} died`)
         })
-        publisher(connA)
+        publisher(connA, connR)
       } else {
         consumer(connA, connR)
       }
