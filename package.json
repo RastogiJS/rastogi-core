@@ -59,7 +59,7 @@
     "tape": "4.6.0"
   },
   "dependencies": {
-    "bee-queue": "0.3.0",
+    "amqplib": "0.4.2",
     "config": "1.21.0",
     "eventsource": "0.2.1",
     "jsondiffpatch": "0.2.4",
