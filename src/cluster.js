@@ -66,7 +66,7 @@ const consumer = (connamqp, connR) => {
   const onOpen = (err, ch) => {
     if (err != null) bail(err)
     ch.assertQueue(q)
-    ch.prefetch(100)
+    ch.prefetch(config.get('amqp.prefetch'))
     ch.consume(q, function (msg) {
       if (msg !== null) {
         const val = JSON.parse(msg.content.toString())
@@ -100,7 +100,7 @@ const consumer = (connamqp, connR) => {
 r.connect(config.get('rethinkdb.connect'), (err, connR) => {
   if (err) throw err
   setupRethinkDB(connR).then(_ => {
-    amqp.connect('amqp://localhost', (err, connA) => {
+    amqp.connect(`amqp://${config.get('amqp.host')}:${config.get('amqp.port')}`, (err, connA) => {
       if (err != null) bail(err)
       if (cluster.isMaster) {
         // Fork workers.

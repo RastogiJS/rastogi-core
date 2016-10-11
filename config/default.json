@@ -14,5 +14,10 @@
     "db": "rastogi",
     "tableAdv": "advisories",
     "tableVuln": "vulndependencies"
+  },
+  "amqp": {
+    "port":"5672",
+    "host": "localhost",
+    "prefetch": 5
   }
 }
