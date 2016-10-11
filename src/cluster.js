@@ -93,7 +93,10 @@ r.connect(config.get('rethinkdb.connect'), (err, connR) => {
         cluster.on('exit', (worker, code, signal) => {
           console.log(`worker ${worker.process.pid} died`)
         })
-        publisher(connA, connR)
+        // FIX: we should follow one style
+        const connect = Rx.Observable.bindNodeCallback(r.connect)
+        const connection = connect(config.get('rethinkdb.connect')).share()
+        publisher(connA, connection)
       } else {
         consumer(connA, connR)
       }
