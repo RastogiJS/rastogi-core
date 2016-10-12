@@ -2,7 +2,7 @@ const Rx = require('rxjs/Rx')
 const nsp = require('./nsp')
 const npm = require('./npm')
 
-const nspFeed = nsp.get.flatMap(x => Rx.Observable.from(x.results))
+const nspFeed = nsp.pollWithdistinctUntilChanged
   .flatMap(adv => npm.fetchDocument(adv.module_name), (adv, doc) => {
     if (doc && doc.versions) {
       adv.module_versions = Object.keys(doc.versions)
