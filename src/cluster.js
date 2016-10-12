@@ -20,15 +20,32 @@ const memanalyzeDependency = memoize(analyzeDependency)
 //
 // Setup rethinkdb
 //
+
+// / create compound indexes
+
+const createVulnTableAndIndex = (conn) => r.db(config.get('rethinkdb.db')).tableCreate(config.get('rethinkdb.tableVuln')).run(conn)
+  .then(_ => r.db(config.get('rethinkdb.db')).table(config.get('rethinkdb.tableVuln')).indexCreate('rastogi_id', [r.row('npmid'), r.row('adv'), r.row('adv-range')]).run(conn))
+
+const createAdvTableAndIndex = (conn) => r.db(config.get('rethinkdb.db')).tableCreate(config.get('rethinkdb.tableAdv')).run(conn)
+  .then(_ => r.db(config.get('rethinkdb.db')).table(config.get('rethinkdb.tableAdv')).indexCreate('module_name').run(conn))
+
 const setupRethinkDB = (conn) => r.dbList().run(conn)
   .then(list => list.indexOf(config.get('rethinkdb.db')) > -1 ? true : r.dbCreate(config.get('rethinkdb.db')).run(conn))
   .then(_ => r.db(config.get('rethinkdb.db')).tableList().run(conn))
   .then(list => {
-    if (!(list.indexOf(config.get('rethinkdb.tableAdv')) > -1) && !(list.indexOf(config.get('rethinkdb.tableVuln')) > -1)) return Promise.all([r.db(config.get('rethinkdb.db')).tableCreate(config.get('rethinkdb.tableAdv')).run(conn), r.db(config.get('rethinkdb.db')).tableCreate(config.get('rethinkdb.tableVuln')).run(conn)])
-    else if (!(list.indexOf(config.get('rethinkdb.tableAdv')) > -1) && list.indexOf(config.get('rethinkdb.tableVuln')) > -1) return r.db(config.get('rethinkdb.db')).tableCreate(config.get('rethinkdb.tableAdv')).run(conn)
-    else if (list.indexOf(config.get('rethinkdb.tableAdv')) > -1 && !(list.indexOf(config.get('rethinkdb.tableVuln')) > -1)) return r.db(config.get('rethinkdb.db')).tableCreate(config.get('rethinkdb.tableVuln')).run(conn)
+    if (!(list.indexOf(config.get('rethinkdb.tableAdv')) > -1) && !(list.indexOf(config.get('rethinkdb.tableVuln')) > -1)) return Promise.all([createVulnTableAndIndex(conn), createAdvTableAndIndex(conn)])
+    else if (!(list.indexOf(config.get('rethinkdb.tableAdv')) > -1) && list.indexOf(config.get('rethinkdb.tableVuln')) > -1) return createAdvTableAndIndex(conn)
+    else if (list.indexOf(config.get('rethinkdb.tableAdv')) > -1 && !(list.indexOf(config.get('rethinkdb.tableVuln')) > -1)) return createVulnTableAndIndex(conn)
     else return true
   })
+
+const insertToRethink = (doc) => r.do(
+  r.db(config.get('rethinkdb.db')).table(config.get('rethinkdb.tableVuln')).getAll([doc.npmid, doc.adv, doc['adv-range']], {index: 'rastogi_id'}).coerceTo('array'), function (res) {
+    return r.branch(res.count().eq(1),
+      r.db(config.get('rethinkdb.db')).table(config.get('rethinkdb.tableVuln')).get(res('id')(0)).replace(res.pluck('id')(0).merge(doc)),
+      r.db(config.get('rethinkdb.db')).table(config.get('rethinkdb.tableVuln')).insert(doc))
+  })
+
 //
 // AMQP
 //
@@ -53,21 +70,20 @@ const consumer = (connamqp, connR) => {
       if (msg !== null) {
         const val = JSON.parse(msg.content.toString())
         const res = {
-          id: val.doc._id,
+          npmid: val.doc._id,
           advisories: [],
-          'dist-tags': val.doc['dist-tags']
-        }
-        res.advisories.push({
+          'dist-tags': val.doc['dist-tags'],
           adv: val.adv.module_name,
           'adv-category': val.adv.category,
           'adv-range': val.adv.vulnerable_versions,
           versions: memanalyzeDependency(val.adv)(val.doc)
-        })
+        }
 
-        const checkmaxVuln = res.advisories[0].versions.map(ver => ver.maxVuln).reduce((prev, curr) => prev || curr, false)
-        const checkminVuln = res.advisories[0].versions.map(ver => ver.minVuln).reduce((prev, curr) => prev || curr, false)
+        const checkmaxVuln = res.versions.map(ver => ver.maxVuln).reduce((prev, curr) => prev || curr, false)
+        const checkminVuln = res.versions.map(ver => ver.minVuln).reduce((prev, curr) => prev || curr, false)
         const insertAdv = r.db(config.get('rethinkdb.db')).table(config.get('rethinkdb.tableAdv')).insert(val.adv, {conflict: 'update'}).run(connR)
-        const insertVuln = r.db(config.get('rethinkdb.db')).table(config.get('rethinkdb.tableVuln')).insert(res, {conflict: 'update'}).run(connR)
+        // const insertVuln = r.db(config.get('rethinkdb.db')).table(config.get('rethinkdb.tableVuln')).insert(res, {conflict: 'update'}).run(connR)
+        const insertVuln = insertToRethink(res).run(connR)
         if (checkmaxVuln || checkminVuln) {
           Promise.all([insertAdv, insertVuln]).then(res => {
             console.log(JSON.stringify(res))

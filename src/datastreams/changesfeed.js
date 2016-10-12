@@ -24,7 +24,7 @@ const noop = _ => _
 // / Database queries
 // /
 const getAdvisories = r.table(config.get('rethinkdb.tableAdv')).map(r.row('module_name'))
-const queryAdvisories = (ids) => r.table(config.get('rethinkdb.tableAdv')).getAll(r.args(ids), {index: 'module_name'}) // /important create index r.db('rastogi').table('advisories').indexCreate('module_name')
+const queryAdvisories = (ids) => r.table(config.get('rethinkdb.tableAdv')).getAll(r.args(ids), {index: 'module_name'})
 const queryExist = (id) => r.table(config.get('rethinkdb.tableAdv')).filter(r.row('module_name').eq(r.table(config.get('rethinkdb.tableVuln')).get(id).pluck('adv')('adv')))
 
 const listAdvisories = (conn) => Rx.Observable.fromPromise(getAdvisories.run(conn, {db: config.get('rethinkdb.db')}).then(curser => curser.toArray()))
