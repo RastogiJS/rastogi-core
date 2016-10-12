@@ -4,7 +4,7 @@
   },
   "nsp": {
     "advisories": "https://api.nodesecurity.io/advisories",
-    "refreshInterval": 300000
+    "refreshInterval": 1800000
   },
   "rethinkdb": {
     "connect": {
