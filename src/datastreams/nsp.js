@@ -13,7 +13,7 @@ const poll = get.merge(Rx.Observable.interval(config.get('nsp.refreshInterval'))
 const pollWithdistinctUntilChanged = () => {
   const db = new Loki('nsp.json')
   const adv = db.addCollection('advisories')
-  return poll.flatMap(x => Rx.Observable.from(x.results)).filter(a => adv.findOne({id: a.id}) === null).do(a => adv.insert(a))
+  return poll.do(_ => console.log(`[${new Date().toISOString()}] checked for new advisories`)).flatMap(x => Rx.Observable.from(x.results)).filter(a => adv.findOne({id: a.id}) === null).do(a => adv.insert(a))
 }
 
 module.exports = {poll, get, pollWithdistinctUntilChanged}
