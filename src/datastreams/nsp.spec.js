@@ -103,6 +103,7 @@ const results = [{
     'cvss_score': 4.7
   }
 ]
+/*
 const movedPositionresults = [
   {
     'id': 140,
@@ -205,6 +206,7 @@ const movedPositionresults = [
     'cvss_score': 4.7
   }
 ]
+*/
 
 const resultsModified = JSON.parse(JSON.stringify(results))
 resultsModified[0].updated_at = '2016-07-29T22:30:08+00:00'
@@ -261,6 +263,7 @@ test('get nsp advisories', (t) => {
   }, _ => _, () => t.end())
 })
 
+/*
 test('no delta shown for shuffled results array', (t) => {
   t.plan(results.length)
   setNockResult(results)
@@ -274,7 +277,7 @@ test('no delta shown for shuffled results array', (t) => {
     t.end()
   }, 12000)
 })
-/*
+
 test('adding a new advisory should yield in #previous advisories + 1', (t) => {
   t.plan(results.length + 1)
   setNockResult(results)

@@ -71,7 +71,6 @@ const consumer = (connamqp, connR) => {
         const val = JSON.parse(msg.content.toString())
         const res = {
           npmid: val.doc._id,
-          advisories: [],
           'dist-tags': val.doc['dist-tags'],
           adv: val.adv.module_name,
           'adv-category': val.adv.category,

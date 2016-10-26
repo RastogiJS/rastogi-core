@@ -8,7 +8,17 @@ const Loki = require('lokijs')
 // /
 const get = fetch(process.env.NSP_URL || config.get('nsp.advisories')).filter(x => x.statusCode === 200).map(x => JSON.parse(x.body))
 
-const poll = get.merge(Rx.Observable.interval(config.get('nsp.refreshInterval')).switchMapTo(get))
+const getWithOffset = (offset, fetchCount) => fetch(`${process.env.NSP_URL || config.get('nsp.advisories')}?offset=${offset || 0}`)
+  .filter(x => x.statusCode === 200)
+  .map(x => JSON.parse(x.body))
+  .map(x => {
+    x.fetchCount = x.count + (fetchCount || 0)
+    return x
+  })
+
+const getAll = getWithOffset().expand(res => res.fetchCount === res.total ? Rx.Observable.empty() : getWithOffset(res.count, res.fetchCount))
+
+const poll = getAll.merge(Rx.Observable.interval(config.get('nsp.refreshInterval')).switchMapTo(getAll))
 
 const pollWithdistinctUntilChanged = () => {
   const db = new Loki('nsp.json')
