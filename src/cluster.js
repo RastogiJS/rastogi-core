@@ -72,6 +72,7 @@ const consumer = (connamqp, connR) => {
         const res = {
           npmid: val.doc._id,
           'dist-tags': val.doc['dist-tags'],
+          created: val.doc.hasOwnProperty('time') && val.doc.time.hasOwnProperty('created') ? val.doc.time.created : null,
           adv: val.adv.module_name,
           'adv-category': val.adv.category,
           'adv-range': val.adv.vulnerable_versions,
