@@ -15,7 +15,7 @@ const connection = connect(config.get('rethinkdb.connect')).share()
 // /
 // / RethinkDB Queries
 // /
-const queryAdvisories = r.db('rastogi').table('advisories').pluck('module_name', 'vulnerable_versions').limit(3)
+const queryAdvisories = r.db('rastogi').table('advisories').pluck('module_name', 'vulnerable_versions')
 
 const getAdvisories = (conn) => Rx.Observable.fromPromise(queryAdvisories.run(conn).then(cursor => cursor.toArray()))
 
