@@ -15,7 +15,7 @@ const connection = connect(config.get('rethinkdb.connect')).share()
 // /
 // / RethinkDB Queries
 // /
-const queryAdvisories = r.db('rastogi').table('advisories').pluck('module_name', 'vulnerable_versions')
+const queryAdvisories = r.db('rastogi').table('advisories').pluck('module_name', 'vulnerable_versions').skip(36)
 
 const getAdvisories = (conn) => Rx.Observable.fromPromise(queryAdvisories.run(conn).then(cursor => cursor.toArray()))
 
@@ -122,28 +122,32 @@ u The previous node.
 
 rootNodes.flatMap(node => {
   return buildDependencyTree({npmid: node.module_name, range: node.vulnerable_versions})
-}, 2).map(x => {
-  x.cy.elements().bfs({ // or dfs
-    root: x.cy.getElementById(x.root.npmid),
-    visit: (i, depth, v, e, u) => {
-      v.data('depth', depth)
-    },
-    directed: false // or your preference
+}, 2)
+  .filter(x => x.cy.elements().length > 0)
+  .map(x => {
+    x.cy.elements().bfs({ // or dfs
+      root: x.cy.getElementById(x.root.npmid),
+      visit: (i, depth, v, e, u) => {
+        v.data('depth', depth)
+      },
+      directed: false // or your preference
+    })
+    return {npmid: x.root.npmid, cy: x.cy}
   })
-  return {npmid: x.root.npmid, cy: x.cy}
-}).map(x => {
-  const visitedNodes = []
-  const root = x.cy.getElementById(x.npmid).data()
-  visitedNodes.push(`${root.id}	${null}	${null}	${root.depth}	${root.downloads}	${root.stars}	${root.forks}`)
-  x.cy.edges().forEach(function (ele) {
-    const edgeData = ele.data()
-    const nodeData = x.cy.getElementById(edgeData.target).data()
-    visitedNodes.push(`${nodeData.id}	${edgeData.source}	${edgeData.latest}	${nodeData.depth}	${nodeData.downloads}	${nodeData.stars}	${nodeData.forks}`)
+  .map(x => {
+    const visitedNodes = []
+    const root = x.cy.getElementById(x.npmid).data()
+    visitedNodes.push(`${root.id}	${null}	${null}	${root.depth}	${root.downloads}	${root.stars}	${root.forks}`)
+    x.cy.edges().forEach(function (ele) {
+      const edgeData = ele.data()
+      const nodeData = x.cy.getElementById(edgeData.target).data()
+      visitedNodes.push(`${nodeData.id}	${edgeData.source}	${edgeData.latest}	${nodeData.depth}	${nodeData.downloads}	${nodeData.stars}	${nodeData.forks}`)
+    })
+    return {npmid: x.npmid, visitedNodes}
   })
-  return {npmid: x.npmid, visitedNodes}
-}).subscribe(x => {
-  const file = fs.createWriteStream(`res/${x.npmid}-${Math.random()}.csv`)
-  file.on('error', (err) => console.log(err))
-  x.visitedNodes.forEach(v => file.write(v + '\n'))
-  file.end()
-}, console.log, () => liveConn.close())
+  .subscribe(x => {
+    const file = fs.createWriteStream(`res/${x.npmid}-${Math.random()}.csv`)
+    file.on('error', (err) => console.log(err))
+    x.visitedNodes.forEach(v => file.write(v + '\n'))
+    file.end()
+  }, console.log, () => liveConn.close())
