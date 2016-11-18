@@ -1,0 +1,23 @@
+{
+  "npm": {
+    "registry": "http://localhost:55590/registry"
+  },
+  "nsp": {
+    "advisories": "https://api.nodesecurity.io/advisories",
+    "refreshInterval": 1000
+  },
+  "rethinkdb": {
+    "connect": {
+      "host": "localhost",
+      "port": "55570"
+    },
+    "db": "rastogi",
+    "tableAdv": "advisories",
+    "tableVuln": "vulndependencies"
+  },
+  "amqp": {
+    "port": "5672",
+    "host": "localhost",
+    "prefetch": 5
+  }
+}

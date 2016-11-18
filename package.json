@@ -61,6 +61,7 @@
   "dependencies": {
     "amqplib": "0.4.2",
     "config": "1.21.0",
+    "cytoscape": "^2.7.10",
     "eventsource": "0.2.1",
     "jsondiffpatch": "0.2.4",
     "lokijs": "^1.4.1",

@@ -46,6 +46,15 @@ const fetchDependedUpon = (mod) => fetch(`${couchURL}/_design/app/_view/depended
   .filter(x => x.statusCode === 200)
   .map(x => JSON.parse(x.body))
 
+const fetchDependedUponAll = (mod) => fetch(`${couchURL}/_design/app/_view/dependedAll?startkey=["${mod}"]&endkey=["${mod}"%2C{}]`)
+  .filter(x => x.statusCode === 200)
+  .map(x => JSON.parse(x.body))
+  .retryWhen(errors => errors
+    // log error message
+    .do(val => console.log(val))
+    // restart in 5 seconds
+    .delayWhen(_ => Rx.Observable.timer(5000))
+)
 const dbInfo = fetch(couchURL).filter(x => x.statusCode === 200).map(x => JSON.parse(x.body))
 
 const fetchDependedUponCount = (mod) => fetch(`${couchURL}/_design/app/_view/dependedUpon?startkey=["${mod}"]&endkey=["${mod}"%2C{}]&limit=1&reduce=true&stale=update_after`)
@@ -58,4 +67,4 @@ const fetchDependedUponCount = (mod) => fetch(`${couchURL}/_design/app/_view/dep
     .delayWhen(_ => Rx.Observable.timer(5000))
 )
 
-module.exports = {streamJSON$, streamRawEvent$, fetchDocument, fetchDependencies, fetchDocuments, fetchDependedUpon, fetchDependedUponCount, dbInfo}
+module.exports = {streamJSON$, streamRawEvent$, fetchDocument, fetchDependencies, fetchDocuments, fetchDependedUpon, fetchDependedUponCount, dbInfo, fetchDependedUponAll}

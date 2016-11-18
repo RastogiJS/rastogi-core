@@ -58,3 +58,8 @@ Thumbs.db
 venv
 node_modules
 .sass-cache
+
+# Results Folder
+res/
+couchdb-setup.txt
+

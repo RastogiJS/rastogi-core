@@ -695,6 +695,10 @@ currently-unhandled@^0.4.1:
   dependencies:
     array-find-index "^1.0.1"
 
+cytoscape:
+  version "2.7.10"
+  resolved "https://registry.yarnpkg.com/cytoscape/-/cytoscape-2.7.10.tgz#ed3aeb89623d9fa3ac1636c814ef5c58cc736421"
+
 cz-conventional-changelog@1.1.5:
   version "1.1.5"
   resolved "https://registry.yarnpkg.com/cz-conventional-changelog/-/cz-conventional-changelog-1.1.5.tgz#0a4d1550c4e2fb6a3aed8f6cd858c21760e119b8"
